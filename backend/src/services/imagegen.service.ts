@@ -32,15 +32,14 @@ export async function generateImage(
     form.append("model", "gpt-image-1");
     form.append("prompt", prompt);
     form.append("size", size === "1024x1792" || size === "1792x1024" ? "auto" : size);
-    const uint8 = new Uint8Array(
-  referenceImage.buffer.buffer,
+    const arrayBuffer = referenceImage.buffer.buffer.slice(
   referenceImage.buffer.byteOffset,
-  referenceImage.buffer.byteLength
-);
+  referenceImage.buffer.byteOffset + referenceImage.buffer.byteLength
+) as ArrayBuffer;
 
 form.append(
   "image",
-  new Blob([uint8], { type: referenceImage.mimetype }),
+  new Blob([arrayBuffer], { type: referenceImage.mimetype }),
   `reference.${referenceImage.mimetype.split("/")[1] || "png"}`
 );
 
