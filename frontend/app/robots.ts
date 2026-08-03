@@ -7,6 +7,5 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
     },
     sitemap: "https://holloconnect.in/sitemap.xml",
-    host: "https://holloconnect.in",
   };
 }
