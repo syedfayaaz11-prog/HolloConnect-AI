@@ -1,0 +1,112 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  background: #05050a;
+  color: #e5e7eb;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "cv11", "ss01";
+  letter-spacing: -0.011em;
+}
+
+h1, h2, h3 {
+  letter-spacing: -0.02em;
+}
+
+::selection {
+  background: rgba(139, 92, 246, 0.35);
+  color: #fff;
+}
+
+/* Core glass surface used by cards, the sidebar, inputs, etc. Slightly richer than a flat
+   translucent fill: a subtle top highlight + soft shadow gives floating-card depth without
+   needing a heavier box-shadow utility on every usage. */
+.glass {
+  background: rgba(255, 255, 255, 0.045);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 10px 30px -10px rgba(0, 0, 0, 0.5);
+}
+
+.glass-hover {
+  transition: background-color 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+}
+.glass-hover:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+/* Dark-themed native <select>. The closed select box can use .glass's translucent/blurred
+   background fine, but the *open* option-list popup is rendered by the browser/OS as its own
+   native UI layer — it does not honor backdrop-filter or alpha transparency there, and falls
+   back to an opaque white panel with default (often unreadable) text unless every color is
+   set explicitly and opaquely, on both <select> and every <option>. Apply alongside (not
+   instead of) .glass so the closed box keeps its normal glass look; this only fixes the popup. */
+.select-dark {
+  color-scheme: dark; /* also fixes the scrollbar/native chrome the popup uses in some browsers */
+}
+.select-dark,
+.select-dark option {
+  background-color: #111827; /* explicit + opaque: reaches the native popup, unlike .glass's alpha fill */
+  color: #e5e7eb;
+}
+.select-dark option:checked,
+.select-dark option:hover,
+.select-dark option:focus {
+  background-color: #8b5cf6; /* accent-purple */
+  color: #ffffff;
+}
+
+/* Gradient text for headings/wordmarks */
+.text-gradient {
+  background: linear-gradient(135deg, #c4b5fd, #93c5fd);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Skeleton loading shimmer */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.05) 25%,
+    rgba(255, 255, 255, 0.1) 37%,
+    rgba(255, 255, 255, 0.05) 63%
+  );
+  background-size: 200% 100%;
+}
+
+/* Code block styling for rehype-highlight output */
+pre {
+  background: rgba(0, 0, 0, 0.45) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  overflow-x: auto;
+}
+
+code {
+  font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.35);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.55);
+}

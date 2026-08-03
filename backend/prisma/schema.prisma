@@ -1,0 +1,417 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String            @id @default(uuid())
+  email            String            @unique
+  passwordHash     String?
+  googleId         String?           @unique
+  name             String?
+  avatarUrl        String?
+  role             Role              @default(USER)
+  isActive         Boolean           @default(true)
+  defaultModel     String            @default("claude-sonnet")
+  defaultVoice     String            @default("alloy")
+  voiceProvider    String            @default("openai")
+  reducedMotion    Boolean           @default(false)
+  memoryEnabled    Boolean           @default(true)
+  plan             String            @default("TRIAL")
+  trialEndsAt      DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  agents           Agent[]
+  apiKeys          ApiKey[]
+  auditLogs        AuditLog[]        @relation("AuditActor")
+  automations      Automation[]
+  chats            Chat[]
+  documents        Document[]
+  generatedImages  GeneratedImage[]
+  memories         Memory[]
+  projects         Project[]
+  researchReports  ResearchReport[]
+  searchQueries    SearchQuery[]
+  videoGenerations VideoGeneration[]
+
+  @@map("users")
+}
+
+model AuditLog {
+  id         String      @id @default(uuid())
+  actorId    String
+  action     AuditAction
+  targetType String
+  targetId   String
+  metadata   Json?
+  createdAt  DateTime    @default(now())
+  actor      User        @relation("AuditActor", fields: [actorId], references: [id], onDelete: Cascade)
+
+  @@index([actorId])
+  @@index([targetType, targetId])
+  @@map("audit_logs")
+}
+
+model ErrorLog {
+  id         String   @id @default(uuid())
+  message    String
+  stack      String?
+  path       String?
+  method     String?
+  statusCode Int?
+  userId     String?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("error_logs")
+}
+
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
+
+model Automation {
+  id             String           @id @default(uuid())
+  userId         String
+  name           String
+  description    String?
+  prompt         String
+  model          String           @default("claude-sonnet")
+  type           AutomationType
+  status         AutomationStatus @default(ACTIVE)
+  cronExpression String?
+  runAt          DateTime?
+  webhookToken   String?          @unique
+  nextRunAt      DateTime?
+  lastRunAt      DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  runs           AutomationRun[]
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("automations")
+}
+
+model AutomationRun {
+  id           String     @id @default(uuid())
+  automationId String
+  status       RunStatus  @default(RUNNING)
+  output       String?
+  error        String?
+  startedAt    DateTime   @default(now())
+  finishedAt   DateTime?
+  automation   Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+
+  @@map("automation_runs")
+}
+
+model Document {
+  id            String         @id @default(uuid())
+  userId        String
+  filename      String
+  fileUrl       String
+  mimeType      String
+  status        DocumentStatus @default(PROCESSING)
+  extractedText String?
+  summary       String?
+  error         String?
+  createdAt     DateTime       @default(now())
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("documents")
+}
+
+model VideoGeneration {
+  id             String           @id @default(uuid())
+  userId         String
+  prompt         String
+  sourceImageUrl String?
+  status         GenerationStatus @default(PENDING)
+  url            String?
+  provider       String
+  providerJobId  String
+  error          String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("video_generations")
+}
+
+model GeneratedImage {
+  id        String   @id @default(uuid())
+  userId    String
+  prompt    String
+  url       String
+  provider  String
+  size      String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("generated_images")
+}
+
+model SearchQuery {
+  id        String   @id @default(uuid())
+  userId    String
+  query     String
+  answer    String
+  sources   Json
+  followUps Json
+  model     String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("search_queries")
+}
+
+model ResearchReport {
+  id        String         @id @default(uuid())
+  userId    String
+  topic     String
+  status    ResearchStatus @default(PENDING)
+  sections  Json?
+  sources   Json?
+  timeline  Json?
+  followUps Json?
+  model     String
+  error     String?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("research_reports")
+}
+
+model Project {
+  id        String   @id @default(uuid())
+  name      String
+  userId    String
+  createdAt DateTime @default(now())
+  chats     Chat[]
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("projects")
+}
+
+model Chat {
+  id        String    @id @default(uuid())
+  title     String    @default("New Chat")
+  userId    String
+  projectId String?
+  model     String    @default("claude-sonnet")
+  pinned    Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  project   Project?  @relation(fields: [projectId], references: [id])
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  Message[]
+
+  @@map("chats")
+}
+
+model Message {
+  id         String      @id @default(uuid())
+  chatId     String
+  role       MessageRole
+  content    String
+  model      String?
+  tokenCount Int?
+  createdAt  DateTime    @default(now())
+  chat       Chat        @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+}
+
+model Agent {
+  id           String      @id @default(uuid())
+  userId       String
+  name         String
+  description  String?
+  instructions String
+  model        String      @default("claude-sonnet")
+  tools        Json
+  maxSteps     Int         @default(6)
+  memory       Json        @default("[]")
+  status       AgentStatus @default(IDLE)
+  enabled      Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  runs         AgentRun[]
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("agents")
+}
+
+model AgentRun {
+  id         String         @id @default(uuid())
+  agentId    String
+  task       String
+  status     AgentRunStatus @default(RUNNING)
+  result     String?
+  error      String?
+  startedAt  DateTime       @default(now())
+  finishedAt DateTime?
+  agent      Agent          @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  steps      AgentStep[]
+
+  @@map("agent_runs")
+}
+
+model AgentStep {
+  id          String   @id @default(uuid())
+  runId       String
+  index       Int
+  thought     String?
+  action      String?
+  actionInput Json?
+  observation String?
+  createdAt   DateTime @default(now())
+  run         AgentRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@map("agent_steps")
+}
+
+model Memory {
+  id             String     @id @default(uuid())
+  userId         String
+  type           MemoryType
+  category       String?
+  key            String?
+  content        String
+  tags           Json       @default("[]")
+  importance     Int        @default(5)
+  source         String?
+  metadata       Json?
+  pinned         Boolean    @default(false)
+  expiresAt      DateTime?
+  lastAccessedAt DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+  @@index([userId, category])
+  @@index([userId, key])
+  @@map("memories")
+}
+
+model ApiKey {
+  id           String         @id @default(uuid())
+  userId       String
+  provider     ApiKeyProvider
+  label        String
+  baseUrl      String?
+  defaultModel String?
+  encryptedKey String?
+  keyPreview   String?
+  isDefault    Boolean        @default(false)
+  status       ApiKeyStatus   @default(UNTESTED)
+  lastTestedAt DateTime?
+  lastError    String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, provider])
+  @@map("api_keys")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum AuditAction {
+  USER_ENABLED
+  USER_DISABLED
+  USER_DELETED
+  USER_ROLE_CHANGED
+}
+
+enum AutomationType {
+  SCHEDULED
+  ONE_TIME
+  TRIGGER
+}
+
+enum AutomationStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+}
+
+enum RunStatus {
+  RUNNING
+  SUCCESS
+  FAILED
+}
+
+enum DocumentStatus {
+  PROCESSING
+  READY
+  FAILED
+}
+
+enum GenerationStatus {
+  PENDING
+  PROCESSING
+  COMPLETE
+  FAILED
+}
+
+enum ResearchStatus {
+  PENDING
+  RUNNING
+  COMPLETE
+  FAILED
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+enum AgentStatus {
+  IDLE
+  RUNNING
+}
+
+enum AgentRunStatus {
+  RUNNING
+  SUCCESS
+  FAILED
+  STOPPED
+}
+
+enum MemoryType {
+  LONG_TERM
+  SHORT_TERM
+  PREFERENCE
+  FACT
+  SUMMARY
+}
+
+enum ApiKeyProvider {
+  OPENAI
+  ANTHROPIC
+  GEMINI
+  OLLAMA
+  OPENAI_COMPATIBLE
+}
+
+enum ApiKeyStatus {
+  UNTESTED
+  VALID
+  INVALID
+}
