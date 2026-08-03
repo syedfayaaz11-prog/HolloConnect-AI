@@ -1,7 +1,7 @@
 import { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://holloconnect.in";
+  const baseUrl = "https://www.holloconnect.in";
 
   return [
     {
