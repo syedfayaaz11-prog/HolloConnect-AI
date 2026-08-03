@@ -134,6 +134,7 @@ model VideoGeneration {
   userId         String
   prompt         String
   sourceImageUrl String?
+  sourceVideoUrl String?
   status         GenerationStatus @default(PENDING)
   url            String?
   provider       String
