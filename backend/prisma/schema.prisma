@@ -409,6 +409,9 @@ enum ApiKeyProvider {
   GEMINI
   OLLAMA
   OPENAI_COMPATIBLE
+  DEEPSEEK
+  MISTRAL
+  XAI
 }
 
 enum ApiKeyStatus {
